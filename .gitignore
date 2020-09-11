@@ -1,1 +1,3 @@
+.gitignore
 geckodriver.exe
+.vscode
