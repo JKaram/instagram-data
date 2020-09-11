@@ -1,3 +1,4 @@
 .gitignore
-geckodriver.exe
 .vscode
+geckodriver.exe
+chromedriver.exe
