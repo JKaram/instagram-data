@@ -19,7 +19,7 @@ login = browser.find_element_by_xpath('//*[@id="loginForm"]/div/div[3]/button/di
 username.send_keys("")
 time.sleep(1)
 password.send_keys("")
-time.sleep(1)
+time.sleep(2)
 login.click()
 
 
