@@ -23,12 +23,23 @@ login.click()
 time.sleep(6)
 
 # Target userimage
-content = browser.find_element_by_class_name('Jv7Aj')
+posts = browser.find_elements_by_class_name('_8Rm4L')
 
-def scrape_posts(html):
+def scrape_posts(post):
+    # grab full post HTML
+    article_innerHTML = post.get_attribute('innerHTML')
+    soup = Soup(article_innerHTML)
+    # grab likes for the post
+    likes = soup.find('button', {'class': 'sqdOP'})[0].find('span').text
+    time_posted = soup.find('time').attrs["datetime"]
+    # grab comments for the post
+    find_comments = browser.find_element_by_class_name('r8ZrO').get_attribute('innerHTML')
+    soup = Soup(find_comments)
+    comments = soup.find('span').text
     now = datetime.datetime.now()
     time.sleep(2)
-    action.move_to_element(html).perform()
+    addtional_info = post.find_element_by_class_name('Jv7Aj')
+    action.move_to_element(addtional_info).perform()
     modal = browser.find_element_by_class_name('GdeD6')
     # target modal
     modal = browser.find_element_by_class_name('GdeD6')
@@ -48,20 +59,7 @@ def scrape_posts(html):
     is_verified = True
     if soup.find('span', {'class': 'mTLOB'}) == None:
         is_verified = False
-
-     # grab full post HTML
-    article_innerHTML = browser.find_element_by_class_name('_8Rm4L').get_attribute('innerHTML')
-    soup = Soup(article_innerHTML)
-    # grab likes for the post
-    likes = soup.find('button', {'class': 'sqdOP'})[0].find('span').text
-    time_posted = soup.find('time').attrs["datetime"]
-
-    # grab comments for the post
-    find_comments = browser.find_element_by_class_name('r8ZrO').get_attribute('innerHTML')
-    soup = Soup(find_comments)
-    comments = soup.find('span').text
-
-    # grab return post info
+    # # grab return post info
     return {
         "likes": likes,
         "comments" : comments,
@@ -74,4 +72,6 @@ def scrape_posts(html):
         "time_scraped": now.strftime("%Y-%m-%d %H:%M:%S")
         }
 
-print(scrape_posts(content))
+for post in posts:
+  print(scrape_posts(post))
+  time.sleep(2)
