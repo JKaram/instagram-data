@@ -87,13 +87,12 @@ def scroll_down():
 
 csv = []
 
-scroll_down()
-
 posts = browser.find_elements_by_class_name('_8Rm4L')
 
-print(posts[0].get_attribute('innerHTML'))
-# for post in tqdm(posts):
-#     csv.append(scrape_posts(post))
-#     print(csv)
+for post in tqdm(posts):
+    csv.append(scrape_posts(post))
+
+
+print(csv)
 
 
