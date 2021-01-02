@@ -2,6 +2,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 import datetime
 import os
 import pandas as pd
+from gazpacho import Soup
 import time
 from tqdm import tqdm
 from selenium import webdriver
@@ -37,39 +38,97 @@ def grab_all_posts():
     posts = browser.find_elements_by_class_name('_8Rm4L')
     return posts
 
-def scrape_modal(post):
-    posts = post.find_element_by_xpath('//div/div/div[2]/div/div/div[1]/span/span').text
-    followers = post.find_element_by_xpath('//div/div/div[2]/div/div/div[2]/span/span').get_attribute("title")
-    following = post.find_element_by_xpath('//div/div/div[2]/div/div/div[3]/span/span').text
-    username = post.find_element_by_xpath('//header/div[2]/div[1]/div/span/a').text
-    verified = True if post.find_element_by_xpath('//div/div/div[1]/div/div/div[1]/a/div/span') else False
-    return {"followers" : followers, "verified": verified, "following": following, "posts": posts, "username": username}
+def scrape_modal(element):
+    posts = element.find_element_by_xpath('//div/div/div[2]/div/div/div[1]/span/span').text
+    followers = element.find_element_by_xpath('//div/div/div[2]/div/div/div[2]/span/span').get_attribute("title")
+    following = element.find_element_by_xpath('//div/div/div[2]/div/div/div[3]/span/span').text
+    username = element.find_element_by_xpath('//header/div[2]/div[1]/div/span/a').text
+    try:
+        post.find_element_by_xpath('//div/div/div[1]/div/div/div[1]/a/div/span')
+        verified = True
+    except:
+        verified = False
+    return {"followers" : followers, "following": following, "posts": posts, "username": username, "verified" : verified}
 
-def scrape_likes_comments(post):
-    likes =  post.find_element_by_xpath('//div[3]/section[2]/div/div/button/span').text
-    comments = post.find_element_by_xpath('//div[3]/div[1]/div/div[2]/div[1]/a/span').text if post.find_element_by_xpath('//div[3]/div[1]/div/div[2]/div[1]/a/span') else "None"
-    post_id = post.find_element_by_xpath('//div[3]/div[2]/a').get_attribute("href")
-    timestamp = post.find_element_by_xpath('//div[3]/div[2]/a/time').get_attribute("datetime")
-    return {"likes": likes, "comments" : comments, "post_id" : post_id, "time_posted" : timestamp }
+def scrape_likes_comments(element):
+    soup = Soup(element.get_attribute("innerHTML"))
+    try:
+        likes = soup.find('div', {'class': 'Nm9Fw'}).find("button").find("span").text
+    except:
+        likes = None
+    time_posted = soup.find('time').attrs["datetime"]
+    comments =  soup.find('a', {'class': 'r8ZrO'}).find('span').text if soup.find('a', {'class': 'r8ZrO'}) else None
+    post_id = soup.find('a', {'class': 'c-Yi7'}).attrs["href"]
+    return {"likes": likes, "comments" : comments, "time_posted" : time_posted , "post_id" : post_id}
+
+# scroll down to load different components into dom
+def scroll_down():
+    for _ in range(1):
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+
+def get_ids(list1):
+    id_list = []
+    for item in list1:
+        id_list.append(item.id)
+    return id_list
 
 login()
 click_not_now()
 click_not_now_again()
-posts = browser.find_elements_by_class_name('_8Rm4L')
-browser.implicitly_wait(5)
 instalogo = browser.find_element_by_xpath('//*[@id="react-root"]/section/nav/div[2]/div/div/div[1]/a/div/div/img')
+scraped_already = []
+csv = []
 
-for post in posts:
-    print(post.location)
 
-# for post in tqdm(posts):
-#     addtional_info = post.find_element_by_class_name('Jv7Aj')
-#     action.move_to_element(addtional_info).perform()
-#     modal = browser.find_element_by_class_name('GdeD6')
-#     posts_and_followers = scrape_modal(modal)
-#     likes_and_comments = scrape_likes_comments(post)
-#     action.move_to_element(instalogo).perform()
-#     print({**likes_and_comments, **posts_and_followers})
+get_ids(grab_all_posts())
+
+
+for _ in range(2):
+    all_posts = grab_all_posts()
+    print(scraped_already)
+    for post in tqdm(all_posts):
+        browser.execute_script("arguments[0].scrollIntoView();", post)
+        print("scroll into view")
+        time.sleep(1)
+        if post.id in scraped_already:
+            print("Match")
+            pass
+        else:
+            try:
+                likes_and_comments = scrape_likes_comments(post)
+                print("likes and comments")
+                time.sleep(1)
+                addtional_info = post.find_element_by_class_name('Jv7Aj')
+                print("additional info")
+                time.sleep(1)
+                action.move_to_element(addtional_info).perform()
+                print("move to link")
+                time.sleep(1)
+                browser.implicitly_wait(1)
+                modal = browser.find_element_by_class_name('GdeD6')
+                print("find modal")
+                time.sleep(1)
+                action.move_to_element(post).perform()
+                print("move off element")
+                time.sleep(1)
+                posts_and_followers = scrape_modal(post)
+                print("scrape modal")
+                time.sleep(1)
+
+                csv.append({**likes_and_comments, **posts_and_followers})
+            except:
+                print("error")
+                pass
+    scraped_already.extend(get_ids(all_posts))
+
+
+
+for _ in csv:
+    print(_)
+
+
+
 
 
 
