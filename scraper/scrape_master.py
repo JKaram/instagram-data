@@ -10,7 +10,7 @@ from selenium.webdriver.common.keys import Keys
 
 
 url = "https://www.instagram.com/"
-browser = webdriver.Chrome(executable_path="./scraper/chromedriver.exe")
+browser = webdriver.Chrome(executable_path="./scraper/chromedriver")
 
 action = ActionChains(browser)
 
@@ -26,10 +26,10 @@ def login():
     login.click()
 
 
-def click_not_now():
-    not_now = browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
-    browser.implicitly_wait(5)
-    not_now.click()
+# def click_not_now():
+#     not_now = browser.find_element_by_xpath('//*[@id="react-root"]/section/main/div/div/div/div/button')
+#     browser.implicitly_wait(5)
+#     not_now.click()
 
 def click_not_now_again():
     not_now = browser.find_element_by_xpath('/html/body/div[4]/div/div/div/div[3]/button[2]')
@@ -58,7 +58,7 @@ def scrape_time_posted(element):
     user_id = soup.find('a', {'class': 'sqdOP'}).attrs["href"]
     comments =  soup.find('a', {'class': 'r8ZrO'}).find('span').text if soup.find('a', {'class': 'r8ZrO'}) else None
     try:
-        likes = soup.find('div', {'class': 'Nm9Fw'}).find("button").find("span").text
+        likes = soup.find('div', {'class': 'Nm9Fw'}).find("span").text
     except:
         likes = None
     return {  "likes" : likes, "comments": comments, "post_id" : post_id,  "time_posted" : time_posted, "user_id" : user_id}
@@ -76,15 +76,15 @@ def get_ids(list1):
     return id_list
 
 login()
-click_not_now()
+# click_not_now()
 click_not_now_again()
 
 
 data = []
-for _ in range(4):
+for _ in tqdm(range(5)):
     if _ != 0: scroll_down()
     posts = grab_all_posts()
-    for post in tqdm(posts):
+    for post in posts:
         user_info = scrape_time_posted(post)
         browser.execute_script(f"window.open('{user_info['user_id']}', '_blank')")
         browser.switch_to.window(browser.window_handles[-1])
@@ -109,29 +109,4 @@ def remove_dupicates(arr):
 
 df = pd.DataFrame(remove_dupicates(data))
 df.to_csv(f'./csvs/{datetime.datetime.now()}.csv')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+df.to_csv('./csvs/instagram_master.csv', mode='a', header=False)
